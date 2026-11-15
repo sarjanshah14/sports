@@ -13,7 +13,7 @@ export default function Home() {
           </span>
         </div>
         <div className="mt-10 md:mt-0">
-          <p className="num text-sm text-accent">Live fixtures · results · draws</p>
+          <p className="num text-sm text-paper/70">Live fixtures · results · draws</p>
           <h1 className="mt-2 font-display text-[22vw] font-black uppercase leading-[0.8] md:text-[clamp(96px,11vw,176px)]">
             Sports
             <br />

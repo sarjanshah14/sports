@@ -64,7 +64,7 @@ export function DayStrip({ code, start, end }: { code: string; start: string | n
       {days.map(({ iso, sports }) => {
         const on = iso === today;
         return (
-          <div key={iso} className={`min-w-[112px] shrink-0 border-t-2 pb-1 pt-2.5 md:min-w-0 ${on ? "border-accent" : "border-rule/15"} ${iso < today ? "opacity-50" : ""}`}>
+          <div key={iso} className={`min-w-[112px] shrink-0 border-t-2 pb-1 pt-2.5 md:min-w-0 ${on ? "border-accent" : "border-rule/15"}`}>
             <div className="flex items-baseline gap-2">
               <span className={`num text-2xl font-medium ${on ? "text-accent" : ""}`}>{fmtDay(iso, { day: "2-digit" })}</span>
               <span className="label">{on ? "Today" : fmtDay(iso, { weekday: "short" })}</span>

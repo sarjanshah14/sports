@@ -157,7 +157,7 @@ function Choice({ label, value, onChange, options }: { label: string; value: str
   return (
     <label className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-mute">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="field w-auto py-1.5 pr-8">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="field w-full min-w-0 max-w-full py-1.5 pr-8 sm:w-auto">
         {options.map(([v, l]) => (
           <option key={v} value={v}>
             {l}

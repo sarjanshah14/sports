@@ -61,16 +61,16 @@ export function PeopleTable({ code, rows, initialSport = "" }: { code: string; r
         </div>
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
           <button onClick={() => setSport("")} className={chip(!sport)}>
-            Everyone <span className="num text-xs opacity-60">{rows.length}</span>
+            Everyone <span className="num text-xs">{rows.length}</span>
           </button>
           {SPORTS.map((s) => (
             <button key={s.slug} onClick={() => setSport(sport === s.slug ? "" : s.slug)} className={chip(sport === s.slug)}>
-              {s.name} <span className="num text-xs opacity-60">{counts[s.slug] ?? 0}</span>
+              {s.name} <span className="num text-xs">{counts[s.slug] ?? 0}</span>
             </button>
           ))}
           {withdrawnCount > 0 && (
             <button onClick={() => setWithdrawn(!withdrawn)} className={`${chip(withdrawn)} ${withdrawn ? "" : "border-dashed"}`}>
-              Withdrawn <span className="num text-xs opacity-60">{withdrawnCount}</span>
+              Withdrawn <span className="num text-xs">{withdrawnCount}</span>
             </button>
           )}
         </div>

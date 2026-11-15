@@ -31,7 +31,7 @@ export function BottomNav({ code }: { code: string }) {
   ];
   const active = (href: string) => (href === `/e/${code}` ? path === href : path.startsWith(href) || (href.endsWith("/sports") && /\/e\/\d+\/(?!find)[a-z-]+$/.test(path)));
   return (
-    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t hair bg-paper/90 backdrop-blur md:hidden">
+    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t hair bg-paper md:hidden">
       <div className="grid grid-cols-3">
         {tabs.map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${active(href) ? "text-ink" : "text-mute"}`}>

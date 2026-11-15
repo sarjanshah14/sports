@@ -226,7 +226,7 @@ export function MatchDesk({
             ] as [Filter, string, number][]
           ).map(([k, label, n]) => (
             <button key={k} onClick={() => setFilter(k)} className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm ${filter === k ? "border-ink bg-ink text-paper" : "hair text-mute"}`}>
-              {label} <span className="num text-xs opacity-60">{n}</span>
+              {label} <span className="num text-xs">{n}</span>
             </button>
           ))}
         </div>

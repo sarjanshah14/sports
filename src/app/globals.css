@@ -9,7 +9,7 @@
   --ink: 22 20 17;
   --mute: 107 101 92;
   --rule: 22 20 17;
-  --accent: 222 60 28;
+  --accent: 196 48 18; /* a touch deeper than the brand red so small text passes WCAG AA (4.9:1) */
   --on-accent: 255 255 255;
   --win: 22 20 17;
   color-scheme: light;
@@ -88,7 +88,7 @@
   --ink: 0 0 0;
   --mute: 85 85 85;
   --rule: 0 0 0;
-  --accent: 222 60 28;
+  --accent: 196 48 18; /* a touch deeper than the brand red so small text passes WCAG AA (4.9:1) */
   --win: 0 0 0;
   background: #fff;
   color: #000;

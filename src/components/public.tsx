@@ -102,7 +102,7 @@ function Fixtures({ matches, unit }: { matches: PublicMatch[]; unit: string }) {
               >
                 {k === "live" && <span className="live-dot size-1.5 rounded-full bg-accent" />}
                 {label}
-                <span className="num text-xs opacity-60">{counts[k]}</span>
+                <span className="num text-xs">{counts[k]}</span>
               </button>
             ) : null,
           )}
