@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check": "tsc --outDir .check --module commonjs --target es2022 --esModuleInterop --skipLibCheck scripts/check-import.ts && node .check/scripts/check-import.js"
+    "check": "tsc --outDir .check --module commonjs --target es2022 --esModuleInterop --skipLibCheck scripts/check-import.ts scripts/check-draw.ts && node .check/scripts/check-import.js && node .check/scripts/check-draw.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.78.0",

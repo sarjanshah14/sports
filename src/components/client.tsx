@@ -228,6 +228,7 @@ export function EventTabs({ code }: { code: string }) {
   const tabs = [
     { href: `/admin/e/${code}`, label: "Overview" },
     { href: `/admin/e/${code}/people`, label: "Participants" },
+    { href: `/admin/e/${code}/sports`, label: "Sports" },
     { href: `/admin/e/${code}/import`, label: "Import" },
   ];
   return (
