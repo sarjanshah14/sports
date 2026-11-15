@@ -2,39 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
+/* A · Matchday programme (light): warm paper, ink, vermilion. */
+:root {
+  --paper: 243 240 233;
+  --sheet: 250 248 243;
+  --ink: 22 20 17;
+  --mute: 107 101 92;
+  --rule: 22 20 17;
+  --accent: 222 60 28;
+  --on-accent: 255 255 255;
+  --win: 22 20 17;
+  color-scheme: light;
+}
+
+/* B · Floodlights (dark): charcoal, electric lime. */
+.dark {
+  --paper: 14 16 15;
+  --sheet: 22 25 23;
+  --ink: 236 238 230;
+  --mute: 134 140 131;
+  --rule: 236 238 230;
+  --accent: 198 244 50;
+  --on-accent: 14 16 15;
+  --win: 198 244 50;
+  color-scheme: dark;
+}
+
 @layer base {
-  :root {
-    --background: 246 246 248;
-    --foreground: 16 22 34;
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    font-feature-settings: "ss01", "cv11";
   }
-  .dark {
-    --background: 16 22 34;
-    --foreground: 246 246 248;
+  .dark body {
+    /* faint film grain so the dark never looks like a flat template */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+  }
+  ::selection {
+    @apply bg-accent text-on-accent;
+  }
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-accent;
+  }
+}
+
+@layer components {
+  .label {
+    @apply font-mono text-[11px] uppercase tracking-label text-mute;
+  }
+  .num {
+    @apply font-mono tabular-nums;
+  }
+  .hair {
+    @apply border-rule/15;
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    @apply bg-white/70 backdrop-blur-md;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+  .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
-::-webkit-scrollbar-track {
-    background: transparent; 
-}
-::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded;
-}
-::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-400;
-}
-
-.form-input:focus {
-    box-shadow: 0 0 0 3px rgba(19, 91, 236, 0.15);
-    border-color: #135bec;
+.live-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .live-dot { animation: none; }
 }

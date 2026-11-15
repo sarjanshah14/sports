@@ -1,79 +1,47 @@
-import Link from "next/link"
-import { Trophy, ArrowRight, CheckCircle } from "lucide-react"
+import { CodeEntry, ThemeToggle } from "@/components/client";
+import { EVENT } from "@/lib/mock-event";
+import { SPORTS } from "@/lib/sports";
 
-export default function LandingPage() {
+export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-900 text-white selection:bg-primary/30">
-      {/* Navbar */}
-      <nav className="border-b border-white/10 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-              <Trophy className="w-6 h-6 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">TourneyOS</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/auth" className="text-sm font-medium hover:text-white/80 transition-colors">Sign In</Link>
-            <Link href="/auth" className="px-5 py-2.5 bg-white text-slate-900 rounded-lg text-sm font-bold hover:bg-slate-100 transition-colors">
-              Get Started
-            </Link>
-          </div>
+    <div className="grid min-h-dvh md:grid-cols-[1.1fr_1fr]">
+      {/* Poster: on phones a slim band, on desktop the whole left half */}
+      <section className="relative flex flex-col justify-between overflow-hidden bg-ink p-5 text-paper md:p-10">
+        <div className="flex items-center justify-between">
+          <span className="label text-paper/60">Hostel Sports Committee</span>
+          <span className="md:hidden [&_button]:border-paper/20 [&_button]:text-paper">
+            <ThemeToggle />
+          </span>
         </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="relative pt-20 pb-32 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary-400 text-sm font-medium mb-8">
-              <span className="w-2 h-2 rounded-full bg-primary-400 animate-pulse"></span>
-              v2.0 is now live
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
-              The modern way to <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">manage tournaments.</span>
-            </h1>
-            <p className="text-xl text-slate-400 mb-10 max-w-xl leading-relaxed">
-              Effortlessly organize leagues, generate brackets, and track stats.
-              Used by over 10,000 organizers worldwide.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/auth" className="px-8 py-4 bg-primary hover:bg-primary/90 rounded-xl text-lg font-bold transition-all hover:transform hover:-translate-y-1 shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
-                Start for free <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="/join" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-lg font-bold transition-all flex items-center justify-center">
-                Join a Tournament
-              </Link>
-            </div>
-          </div>
+        <div className="mt-10 md:mt-0">
+          <p className="num text-sm text-accent">22—28.12.{EVENT.edition}</p>
+          <h1 className="mt-2 font-display text-[22vw] font-black uppercase leading-[0.8] md:text-[clamp(96px,11vw,176px)]">
+            Sports
+            <br />
+            Week
+          </h1>
         </div>
+        <ul className="mt-8 hidden flex-wrap gap-x-4 gap-y-1 md:flex">
+          {SPORTS.map((s, i) => (
+            <li key={s.slug} className="font-display text-2xl font-bold uppercase text-paper/40">
+              {s.name}
+              {i < SPORTS.length - 1 && <span className="ml-4 text-accent">/</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        {/* Background Elements */}
-        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-3xl opacity-50"></div>
-      </div>
-
-      {/* Features */}
-      <div className="py-24 bg-slate-800/50 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-12">
-            {[
-              { title: "Automated Brackets", desc: "Support for single elim, double elim, and round robin styles." },
-              { title: "Real-time Updates", desc: "Participants get instant notifications when matches update." },
-              { title: "Team Management", desc: "Handle registrations, rosters, and payments in one place." },
-            ].map((f, i) => (
-              <div key={i} className="space-y-4">
-                <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
-                  <CheckCircle className="w-6 h-6 text-primary-400" />
-                </div>
-                <h3 className="text-xl font-bold">{f.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
+      <section className="flex flex-col justify-between p-5 md:p-10">
+        <div className="hidden justify-end md:flex">
+          <ThemeToggle />
         </div>
-      </div>
+        <div className="mx-auto w-full max-w-sm py-10">
+          <h2 className="font-display text-4xl font-extrabold uppercase leading-none">Enter the code</h2>
+          <p className="mb-6 mt-2 text-mute">Six digits, from the notice board or the WhatsApp group. No sign-up.</p>
+          <CodeEntry hint={EVENT.code} />
+        </div>
+        <p className="label">Fixtures, results and every draw, in one place.</p>
+      </section>
     </div>
-  )
+  );
 }
