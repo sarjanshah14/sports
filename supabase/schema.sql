@@ -1,89 +1,44 @@
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- Hostel Sports Week: run once in the Supabase SQL editor.
+-- Every read and write goes through the Next.js server with the secret key,
+-- so RLS is on with no policies: the public anon key can read nothing (phone numbers stay private).
 
--- Tournaments Table
-create table public.tournaments (
-  id uuid not null default uuid_generate_v4(),
-  created_at timestamptz not null default now(),
+create table public.events (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique check (code ~ '^\d{6}$'),
   name text not null,
-  description text,
-  created_by uuid not null references auth.users(id) on delete cascade,
-  join_code text unique,
-  status text not null default 'draft' check (status in ('draft', 'active', 'completed')),
-  config jsonb not null default '{}'::jsonb,
-  constraint tournaments_pkey primary key (id)
+  starts_on date,
+  ends_on date,
+  created_at timestamptz not null default now()
 );
 
--- Enable RLS for Tournaments
-alter table public.tournaments enable row level security;
-
--- Policies for Tournaments
-create policy "Public tournaments are viewable by everyone."
-  on public.tournaments for select
-  using (true);
-
-create policy "Users can create their own tournaments."
-  on public.tournaments for insert
-  with check (auth.uid() = created_by);
-
-create policy "Users can update their own tournaments."
-  on public.tournaments for update
-  using (auth.uid() = created_by);
-
-create policy "Users can delete their own tournaments."
-  on public.tournaments for delete
-  using (auth.uid() = created_by);
-
--- Participants Table
 create table public.participants (
-  id uuid not null default uuid_generate_v4(),
-  tournament_id uuid not null references public.tournaments(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.events on delete cascade,
   name text not null,
-  email text,
-  status text not null default 'active',
+  phone text,
+  room text,
+  cricket_role text,
+  volleyball_role text,
+  tshirt_size text,
+  tshirt_name text,
+  tshirt_number text,
+  photo_url text,
+  submitted_at text, -- the Google Form timestamp, kept as written
   created_at timestamptz not null default now(),
-  constraint participants_pkey primary key (id)
+  updated_at timestamptz not null default now()
+);
+create index participants_event on public.participants (event_id);
+-- One person per phone number per event: re-imports skip people already in.
+create unique index participants_event_phone on public.participants (event_id, phone) where phone is not null and phone <> '';
+
+-- Which sports each person entered. Withdrawing keeps the row so the history stays visible.
+create table public.entries (
+  participant_id uuid not null references public.participants on delete cascade,
+  sport text not null,
+  withdrawn_at timestamptz,
+  primary key (participant_id, sport)
 );
 
--- Enable RLS for Participants
+alter table public.events enable row level security;
 alter table public.participants enable row level security;
-
--- Policies for Participants
-create policy "Participants are viewable by everyone."
-  on public.participants for select
-  using (true);
-
-create policy "Tournament creators can manage participants."
-  on public.participants for all
-  using (auth.uid() in (
-    select created_by from public.tournaments where id = participants.tournament_id
-  ));
-
--- Matches Table
-create table public.matches (
-  id uuid not null default uuid_generate_v4(),
-  tournament_id uuid not null references public.tournaments(id) on delete cascade,
-  round integer not null,
-  match_number integer not null,
-  participant_a_id uuid references public.participants(id),
-  participant_b_id uuid references public.participants(id),
-  winner_id uuid references public.participants(id),
-  next_match_id uuid references public.matches(id),
-  score_json jsonb,
-  created_at timestamptz not null default now(),
-  constraint matches_pkey primary key (id)
-);
-
--- Enable RLS for Matches
-alter table public.matches enable row level security;
-
--- Policies for Matches
-create policy "Matches are viewable by everyone."
-  on public.matches for select
-  using (true);
-
-create policy "Tournament creators can manage matches."
-  on public.matches for all
-  using (auth.uid() in (
-    select created_by from public.tournaments where id = matches.tournament_id
-  ));
+alter table public.entries enable row level security;

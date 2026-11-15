@@ -31,3 +31,24 @@ export function sportFromFormLabel(label: string) {
   const key = label.split("(")[0].trim().toLowerCase().replace(/\s+/g, " ").replace("carom", "carrom");
   return SPORTS.find((s) => s.name.toLowerCase() === key);
 }
+
+/**
+ * Splits a form cell into sport slugs. Commas also appear inside the brackets
+ * ("Badminton ( 24 December, Time : After 6 pm )"), so match "Name ( ... )" chunks first,
+ * then fall back to plain comma lists ("Chess, Carrom") for hand-made sheets.
+ */
+export function splitSports(cell: string) {
+  const text = cell.trim();
+  if (!text) return { slugs: [] as string[], unknown: [] as string[] };
+  const parts = text.includes("(") ? text.match(/[^,(]+\([^)]*\)/g) ?? [] : text.split(",");
+  const slugs: string[] = [];
+  const unknown: string[] = [];
+  for (const part of parts) {
+    const s = sportFromFormLabel(part);
+    if (s) {
+      if (!slugs.includes(s.slug)) slugs.push(s.slug);
+    }
+    else if (part.trim()) unknown.push(part.trim());
+  }
+  return { slugs, unknown };
+}

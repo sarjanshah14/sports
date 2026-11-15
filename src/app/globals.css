@@ -15,16 +15,16 @@
   color-scheme: light;
 }
 
-/* B · Floodlights (dark): charcoal, electric lime. */
+/* B · Floodlights (dark): warm charcoal, the same vermilion lifted for dark. */
 .dark {
-  --paper: 14 16 15;
-  --sheet: 22 25 23;
-  --ink: 236 238 230;
-  --mute: 134 140 131;
-  --rule: 236 238 230;
-  --accent: 198 244 50;
-  --on-accent: 14 16 15;
-  --win: 198 244 50;
+  --paper: 17 16 15;
+  --sheet: 26 25 23;
+  --ink: 237 233 225;
+  --mute: 145 139 130;
+  --rule: 237 233 225;
+  --accent: 240 98 64;
+  --on-accent: 17 16 15;
+  --win: 237 233 225;
   color-scheme: dark;
 }
 
@@ -54,6 +54,15 @@
   }
   .hair {
     @apply border-rule/15;
+  }
+  .field {
+    @apply w-full rounded-lg border border-rule/15 bg-sheet px-3 py-2.5 text-[15px] text-ink placeholder:text-mute/70 focus:border-ink focus:outline-none;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-paper transition hover:opacity-90 disabled:opacity-50;
+  }
+  .btn-quiet {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border border-rule/15 px-4 py-2 text-sm text-ink transition hover:border-ink disabled:opacity-50;
   }
 }
 

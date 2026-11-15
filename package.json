@@ -6,23 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check": "tsc --outDir .check --module commonjs --target es2022 --esModuleInterop --skipLibCheck scripts/check-import.ts && node .check/scripts/check-import.js"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.78.0",
-    "@tailwindcss/container-queries": "^0.1.1",
-    "@tailwindcss/forms": "^0.5.11",
-    "clsx": "^2.1.1",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^4.1.0",
     "lucide-react": "^0.563.0",
     "next": "14.2.35",
     "next-themes": "^0.4.6",
     "react": "^18",
     "react-dom": "^18",
-    "reactflow": "^11.11.4",
-    "tailwind-merge": "^3.4.0"
+    "read-excel-file": "^9.3.17"
   },
   "devDependencies": {
     "@types/node": "^20",

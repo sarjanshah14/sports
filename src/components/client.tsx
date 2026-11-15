@@ -222,3 +222,24 @@ export function FindMe({ people, code }: { people: FindEntry[]; code: string }) 
     </div>
   );
 }
+
+export function EventTabs({ code }: { code: string }) {
+  const path = usePathname();
+  const tabs = [
+    { href: `/admin/e/${code}`, label: "Overview" },
+    { href: `/admin/e/${code}/people`, label: "Participants" },
+    { href: `/admin/e/${code}/import`, label: "Import" },
+  ];
+  return (
+    <nav className="no-scrollbar -mx-4 mt-5 flex gap-6 overflow-x-auto border-b hair px-4 md:mx-0 md:px-0">
+      {tabs.map((t) => {
+        const on = t.href === `/admin/e/${code}` ? path === t.href : path.startsWith(t.href);
+        return (
+          <Link key={t.href} href={t.href} className={`shrink-0 border-b-2 pb-2.5 font-display text-lg font-bold uppercase ${on ? "border-accent text-ink" : "border-transparent text-mute hover:text-ink"}`}>
+            {t.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

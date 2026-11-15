@@ -1,4 +1,4 @@
-import { SPORTS, sportFromFormLabel } from "./sports";
+import { SPORTS, splitSports } from "./sports";
 
 // ponytail: prototype-only data. Phase 2 replaces this with rows imported from the master Excel.
 
@@ -97,18 +97,13 @@ export function makeFormRows(count = 300, seed = 2025): FormRow[] {
   return rows;
 }
 
-/** Splits "Chess ( 22 December ), Table Tennis  ( 23 December )" safely: commas also appear inside the brackets. */
-export function splitSports(cell: string) {
-  return (cell.match(/[^,(]+\([^)]*\)/g) ?? []).map((s) => sportFromFormLabel(s)?.slug).filter(Boolean) as string[];
-}
-
 export function toParticipant(row: FormRow, i: number): Participant {
   return {
     id: `p${i + 1}`,
     name: row["Player Name"].trim().replace(/\b\w/g, (c) => c.toUpperCase()),
     phone: row["Contact Number "],
     room: row.Room,
-    sports: [...splitSports(row["Indoor Sports (Max 2)"]), ...splitSports(row["Outdoor Sports (Max 3)"])],
+    sports: [...splitSports(row["Indoor Sports (Max 2)"]).slugs, ...splitSports(row["Outdoor Sports (Max 3)"]).slugs],
     cricketRole: row["Select your role in Cricket"] || undefined,
     volleyballRole: row["Select your role in volleyball"] || undefined,
     size: row["Player Tshirt Size"],
