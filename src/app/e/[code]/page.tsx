@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MatchRow } from "@/components/match";
+import { ShareButton } from "@/components/public";
 import { DayStrip, SectionHead, SportsIndex, fmtDay, timeIST, todayIST } from "@/components/sections";
 import { publicEvent, stageLabel, type PublicMatch } from "@/lib/public-data";
 import { sportBySlug } from "@/lib/sports";
@@ -65,6 +66,9 @@ export default async function EventHome({ params }: { params: { code: string } }
           <Stat n={live.length} label="on now" accent={live.length > 0} />
           <Stat n={all.filter((m) => m.status === "done" && m.b).length} label="played" />
           <Stat n={champions.length} label="of 7 sports decided" />
+        </div>
+        <div className="mt-5">
+          <ShareButton title={ev.name} path={`/e/${ev.code}`} />
         </div>
       </section>
 

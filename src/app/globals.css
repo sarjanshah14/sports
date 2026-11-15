@@ -80,3 +80,38 @@
 @media (prefers-reduced-motion: reduce) {
   .live-dot { animation: none; }
 }
+
+/* Print sheets: always black on white, whatever the screen theme. */
+.sheet {
+  --paper: 255 255 255;
+  --sheet: 255 255 255;
+  --ink: 0 0 0;
+  --mute: 85 85 85;
+  --rule: 0 0 0;
+  --accent: 222 60 28;
+  --win: 0 0 0;
+  background: #fff;
+  color: #000;
+}
+@page {
+  size: A4;
+  margin: 12mm;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  .avoid-break {
+    break-inside: avoid;
+  }
+}

@@ -43,7 +43,29 @@ export default async function Overview({ params }: { params: { code: string } })
           </li>
         ))}
       </ul>
-      <p className="mt-6 text-sm text-mute">Draws, fixtures and the public page for this code come in the next phases.</p>
+      <section className="mt-10">
+        <h2 className="font-display text-2xl font-extrabold uppercase">Downloads</h2>
+        <p className="mt-1 text-sm text-mute">Open straight in Excel or Google Sheets.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {[
+            ["participants.csv", "Participants", "Everyone, with phones and teams. Committee only."],
+            ["tshirts.csv", "T-shirt order", "Size totals, then every shirt by team."],
+            ["results.csv", "Results", "Every match and champion so far."],
+          ].map(([f, t, d]) => (
+            <a key={f} href={`/admin/e/${ev.code}/export/${f}`} className="rounded-xl border hair p-4 hover:border-ink">
+              <span className="font-medium">{t} ↓</span>
+              <span className="mt-1 block text-xs text-mute">{d}</span>
+            </a>
+          ))}
+        </div>
+        <p className="mt-4 text-sm">
+          Public page:{" "}
+          <Link href={`/e/${ev.code}`} className="underline decoration-accent underline-offset-4">
+            /e/{ev.code}
+          </Link>{" "}
+          · Printable fixtures are on each sport&apos;s public page.
+        </p>
+      </section>
     </div>
   );
 }

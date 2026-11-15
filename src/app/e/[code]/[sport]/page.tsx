@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Crown } from "lucide-react";
-import { RoundView } from "@/components/public";
+import { RoundView, ShareButton } from "@/components/public";
 import { Folded } from "@/components/sport-setup";
 import { fmtDay, timeIST } from "@/components/sections";
 import { publicEvent, sportView } from "@/lib/public-data";
@@ -48,6 +48,13 @@ export default async function SportPage({ params }: { params: { code: string; sp
           </div>
         )}
       </section>
+
+      <div className="-mt-2 mb-8 flex flex-wrap gap-2">
+        <ShareButton title={`${sport.name} · ${pe.ev.name}`} path={`/e/${params.code}/${sport.slug}`} />
+        <Link href={`/print/${params.code}/${sport.slug}`} className="btn-quiet">
+          Print / PDF
+        </Link>
+      </div>
 
       {summary.champion && (
         <div className="mb-10 rounded-xl bg-ink p-5 text-paper md:p-8">

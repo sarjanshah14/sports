@@ -35,7 +35,12 @@ export default async function Play({ params }: { params: { code: string; sport: 
       <Link href={`/admin/e/${ev.code}/sports/${params.sport}`} className="label inline-flex items-center gap-1.5 hover:text-ink">
         <ArrowLeft size={13} /> {st.sport.name} setup
       </Link>
-      <h1 className="mb-6 mt-2 font-display text-5xl font-black uppercase leading-[0.85]">{st.sport.name}</h1>
+      <div className="mb-6 mt-2 flex items-end justify-between gap-3">
+        <h1 className="font-display text-5xl font-black uppercase leading-[0.85]">{st.sport.name}</h1>
+        <Link href={`/print/${ev.code}/${params.sport}`} className="btn-quiet shrink-0">
+          Print sheet
+        </Link>
+      </div>
       <MatchDesk
         code={ev.code}
         slug={params.sport}

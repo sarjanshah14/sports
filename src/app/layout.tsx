@@ -9,6 +9,8 @@ const sans = localFont({ src: "./fonts/GeistVF.woff", variable: "--font-sans", w
 const mono = localFont({ src: "./fonts/GeistMonoVF.woff", variable: "--font-mono", weight: "100 900" });
 
 export const metadata: Metadata = {
+  // Absolute base for share-card image links (WhatsApp needs full URLs).
+  metadataBase: new URL(process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000"),
   title: "Fixtures — Hostel Sports Week",
   description: "Live fixtures, results and brackets for the hostel sports week.",
 };

@@ -202,3 +202,35 @@ export function FindMe({ people, code, units }: { people: Found[]; code: string;
     </div>
   );
 }
+
+export function PrintButton() {
+  return (
+    <button onClick={() => window.print()} className="btn">
+      Print / Save as PDF
+    </button>
+  );
+}
+
+/** Shares the page link; WhatsApp shows the results card as the preview. Falls back to copying. */
+export function ShareButton({ title, path }: { title: string; path: string }) {
+  const [msg, setMsg] = useState("");
+  return (
+    <button
+      onClick={async () => {
+        const url = new URL(path, window.location.origin).toString();
+        try {
+          if (navigator.share) await navigator.share({ title, url });
+          else {
+            await navigator.clipboard.writeText(url);
+            setMsg("Link copied");
+          }
+        } catch {
+          /* closed the share sheet */
+        }
+      }}
+      className="btn-quiet"
+    >
+      {msg || "Share"}
+    </button>
+  );
+}
