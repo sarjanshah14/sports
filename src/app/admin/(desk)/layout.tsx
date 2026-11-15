@@ -8,6 +8,9 @@ export const metadata = { title: "Committee desk" };
 
 export default function DeskLayout({ children }: { children: React.ReactNode }) {
   requireAdmin();
+  const pw = process.env.ADMIN_PASSWORD ?? "";
+  // Warn until the password is long and not just letters + a year.
+  const weak = pw.length < 12 || !/\d/.test(pw) || /^[a-z]+\d{0,4}$/i.test(pw);
   const connected = !!(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL) && !!(process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY);
   return (
     <div className="min-h-dvh">
@@ -27,6 +30,11 @@ export default function DeskLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </header>
+      {weak && (
+        <div className="border-b border-accent/40 bg-accent/10 px-4 py-2 text-center text-sm md:px-8">
+          The committee password is easy to guess. Before the event, set a longer one (12+ characters, with a number) in Vercel → Settings → Environment Variables → ADMIN_PASSWORD, then redeploy.
+        </div>
+      )}
       <main className="mx-auto max-w-6xl px-4 pb-24 md:px-8">
         {connected ? (
           children

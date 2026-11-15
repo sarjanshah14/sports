@@ -151,3 +151,15 @@ export async function deleteParticipant(code: string, id: string) {
   revalidateTag(eventTag(code));
   redirect(`/admin/e/${code}/people`);
 }
+
+/** Permanently removes an event and everything in it (people, draws, matches, log). Needs the code typed back. */
+export async function deleteEvent(code: string, typed: string) {
+  requireAdmin();
+  if (typed.trim() !== code) return { error: "The code you typed doesn't match." };
+  const ev = await eventByCode(code);
+  if (!ev) return { error: "Event not found." };
+  must(await db().from("events").delete().eq("id", ev.id)); // every other table cascades from events
+  revalidateTag(eventTag(code));
+  revalidatePath("/admin");
+  redirect("/admin");
+}

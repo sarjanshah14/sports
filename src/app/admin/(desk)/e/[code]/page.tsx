@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DeleteEvent } from "@/components/admin-forms";
 import { db, eventByCode, must } from "@/lib/db";
 import { SPORTS } from "@/lib/sports";
 
@@ -20,6 +21,9 @@ export default async function Overview({ params }: { params: { code: string } })
         <Link href={`/admin/e/${ev.code}/import`} className="btn mt-5">
           Import participants
         </Link>
+        <div className="mt-10">
+          <DeleteEvent code={ev.code} name={ev.name} />
+        </div>
       </div>
     );
 
@@ -65,6 +69,9 @@ export default async function Overview({ params }: { params: { code: string } })
           </Link>{" "}
           · Printable fixtures are on each sport&apos;s public page.
         </p>
+      </section>
+      <section className="mt-14 border-t hair pt-6">
+        <DeleteEvent code={ev.code} name={ev.name} />
       </section>
     </div>
   );
