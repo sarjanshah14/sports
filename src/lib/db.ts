@@ -7,7 +7,12 @@ export function db() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) throw new Error("Supabase is not connected: set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
-  return (client ??= createClient(url, key, { auth: { persistSession: false } }));
+  return (client ??= createClient(url, key, {
+    auth: { persistSession: false },
+    // Next 14 caches server fetch() by default; database reads must always be fresh.
+    // (Public pages cache on purpose via unstable_cache in public-data.ts, cleared on every change.)
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
+  }));
 }
 
 export type EventRow = { id: string; code: string; name: string; starts_on: string | null; ends_on: string | null; created_at: string };
