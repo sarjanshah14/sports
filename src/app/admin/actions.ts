@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { eventTag } from "@/lib/public-data";
 import { redirect } from "next/navigation";
 import { checkPassword, clearSession, requireAdmin, setSession } from "@/lib/auth";
 import { db, eventByCode, must } from "@/lib/db";
@@ -98,6 +99,7 @@ export async function importPeople(code: string, people: Person[]) {
     must(await db().from("entries").insert(entries));
   }
   revalidatePath(`/admin/e/${code}`, "layout");
+  revalidateTag(eventTag(code));
   return { added: fresh.length, already };
 }
 
@@ -138,6 +140,7 @@ export async function saveParticipant(code: string, id: string | null, _: unknow
   );
 
   revalidatePath(`/admin/e/${code}`, "layout");
+  revalidateTag(eventTag(code));
   redirect(`/admin/e/${code}/people?saved=1`);
 }
 
@@ -145,5 +148,6 @@ export async function deleteParticipant(code: string, id: string) {
   const ev = await eventOr404(code);
   must(await db().from("participants").delete().eq("id", id).eq("event_id", ev.id));
   revalidatePath(`/admin/e/${code}`, "layout");
+  revalidateTag(eventTag(code));
   redirect(`/admin/e/${code}/people`);
 }

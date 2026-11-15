@@ -1,5 +1,4 @@
 import { CodeEntry, ThemeToggle } from "@/components/client";
-import { EVENT } from "@/lib/mock-event";
 import { SPORTS } from "@/lib/sports";
 
 export default function Home() {
@@ -14,7 +13,7 @@ export default function Home() {
           </span>
         </div>
         <div className="mt-10 md:mt-0">
-          <p className="num text-sm text-accent">22—28.12.{EVENT.edition}</p>
+          <p className="num text-sm text-accent">Live fixtures · results · draws</p>
           <h1 className="mt-2 font-display text-[22vw] font-black uppercase leading-[0.8] md:text-[clamp(96px,11vw,176px)]">
             Sports
             <br />
@@ -38,7 +37,7 @@ export default function Home() {
         <div className="mx-auto w-full max-w-sm py-10">
           <h2 className="font-display text-4xl font-extrabold uppercase leading-none">Enter the code</h2>
           <p className="mb-6 mt-2 text-mute">Six digits, from the notice board or the WhatsApp group. No sign-up.</p>
-          <CodeEntry hint={EVENT.code} />
+          <CodeEntry />
         </div>
         <p className="label">Fixtures, results and every draw, in one place.</p>
       </section>

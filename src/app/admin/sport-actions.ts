@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { eventTag } from "@/lib/public-data";
 import { requireAdmin } from "@/lib/auth";
 import { db, eventByCode, must } from "@/lib/db";
 import { groupConfigs, groupLabel, makeGroups, METHODS, newSeed, randomPairs, rollingRound, roundRobin, standardRound1, swissRound, type Method, type Options, type Pair } from "@/lib/draw";
@@ -15,7 +16,10 @@ async function ctx(code: string, slug: string) {
   return { ev, sport };
 }
 
-const done = (code: string, slug: string) => revalidatePath(`/admin/e/${code}/sports/${slug}`, "layout");
+const done = (code: string, slug: string) => {
+  revalidatePath(`/admin/e/${code}/sports/${slug}`, "layout");
+  revalidateTag(eventTag(code));
+};
 const short = (name: string) => {
   const [f, ...rest] = name.split(" ");
   return rest.length ? `${f} ${rest[rest.length - 1][0]}.` : f;

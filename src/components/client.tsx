@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Moon, Search, Sun, Trophy, CalendarDays } from "lucide-react";
-import type { Match } from "@/lib/mock-event";
-import { MatchRow } from "./match";
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -68,7 +66,7 @@ export function DesktopNav({ code }: { code: string }) {
   );
 }
 
-export function CodeEntry({ hint }: { hint: string }) {
+export function CodeEntry() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -109,116 +107,7 @@ export function CodeEntry({ hint }: { hint: string }) {
           })}
         </div>
       </label>
-      <p className="mt-4 text-sm text-mute">
-        {busy ? "Opening…" : <>Prototype code: <button className="num text-ink underline decoration-accent underline-offset-4" onClick={() => setCode(hint)}>{hint}</button></>}
-      </p>
-    </div>
-  );
-}
-
-type Filter = "all" | "live" | "done" | "upcoming";
-
-export function FixtureList({ matches, unit }: { matches: Match[]; unit: string }) {
-  const [filter, setFilter] = useState<Filter>("all");
-  const [q, setQ] = useState("");
-  const counts = useMemo(
-    () => ({
-      all: matches.length,
-      live: matches.filter((m) => m.status === "live").length,
-      done: matches.filter((m) => m.status === "done").length,
-      upcoming: matches.filter((m) => m.status === "next" || m.status === "scheduled").length,
-    }),
-    [matches],
-  );
-  const shown = matches.filter((m) => {
-    if (filter === "live" && m.status !== "live") return false;
-    if (filter === "done" && m.status !== "done") return false;
-    if (filter === "upcoming" && !(m.status === "next" || m.status === "scheduled")) return false;
-    const s = q.trim().toLowerCase();
-    return !s || m.a.toLowerCase().includes(s) || (m.b ?? "").toLowerCase().includes(s);
-  });
-  const tabs: [Filter, string][] = [["all", "All"], ["live", "Live"], ["done", "Results"], ["upcoming", "Upcoming"]];
-
-  return (
-    <div>
-      <div className="sticky top-14 z-20 -mx-4 flex flex-col gap-3 border-b hair bg-paper/95 px-4 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between md:static md:mx-0 md:border-none md:bg-transparent md:px-0 md:backdrop-blur-0">
-        <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-          {tabs.map(([k, label]) =>
-            counts[k] ? (
-              <button
-                key={k}
-                onClick={() => setFilter(k)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition ${filter === k ? "border-ink bg-ink text-paper" : "hair text-mute hover:text-ink"}`}
-              >
-                {k === "live" && <span className="live-dot size-1.5 rounded-full bg-accent" />}
-                {label}
-                <span className="num text-xs opacity-60">{counts[k]}</span>
-              </button>
-            ) : null,
-          )}
-        </div>
-        <label className="relative sm:w-56">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mute" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Filter by name"
-            className="w-full rounded-full border hair bg-sheet py-1.5 pl-9 pr-3 text-sm placeholder:text-mute focus:border-ink focus:outline-none"
-          />
-        </label>
-      </div>
-      <div className="divide-y divide-rule/10 border-b hair md:mt-4 md:border-t">
-        {shown.map((m) => (
-          <MatchRow key={m.id} m={m} unit={unit} />
-        ))}
-        {!shown.length && <p className="py-12 text-center text-sm text-mute">No matches match that.</p>}
-      </div>
-    </div>
-  );
-}
-
-export type FindEntry = { name: string; room: string; sports: { slug: string; name: string; match?: Match; unit: string }[] };
-
-export function FindMe({ people, code }: { people: FindEntry[]; code: string }) {
-  const [q, setQ] = useState("");
-  const s = q.trim().toLowerCase();
-  const hits = s.length < 2 ? [] : people.filter((p) => p.name.toLowerCase().includes(s) || p.room === s).slice(0, 12);
-  return (
-    <div>
-      <label className="relative block">
-        <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-mute" />
-        <input
-          autoFocus
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Your name or room number"
-          className="w-full rounded-xl border hair bg-sheet py-4 pl-12 pr-4 text-lg placeholder:text-mute focus:border-ink focus:outline-none"
-        />
-      </label>
-      {s.length < 2 && <p className="mt-4 text-sm text-mute">Every match you are in, across all seven sports. Try “Shah” or “418”.</p>}
-      {s.length >= 2 && !hits.length && <p className="mt-6 text-sm text-mute">Nobody by that name. Ask the committee if you signed up but are missing.</p>}
-      <ul className="mt-6 space-y-4">
-        {hits.map((p) => (
-          <li key={p.name} className="rounded-xl border hair bg-sheet">
-            <div className="flex items-baseline justify-between px-4 pt-4">
-              <p className="font-display text-2xl font-extrabold uppercase leading-none">{p.name}</p>
-              <p className="label">Room {p.room}</p>
-            </div>
-            <div className="mt-3 divide-y divide-rule/10 border-t hair">
-              {p.sports.map((sp) => (
-                <Link key={sp.slug} href={`/e/${code}/${sp.slug}`} className="block px-4 py-3 transition hover:bg-paper/60">
-                  <p className="label">{sp.name}</p>
-                  {sp.match ? (
-                    <MatchRow m={sp.match} unit={sp.unit} compact highlight={p.name} />
-                  ) : (
-                    <p className="mt-1 text-sm text-mute">Waiting on teams from the auction.</p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </li>
-        ))}
-      </ul>
+      <p className="mt-4 text-sm text-mute">{busy ? "Opening…" : "\u00a0"}</p>
     </div>
   );
 }

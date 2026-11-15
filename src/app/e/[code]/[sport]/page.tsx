@@ -1,36 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { FixtureList } from "@/components/client";
-import { fmtDay } from "@/components/sections";
-import { entrants } from "@/lib/dummy";
-import { EVENT, matchesFor, sportSummary } from "@/lib/mock-event";
+import { ArrowLeft, Crown } from "lucide-react";
+import { RoundView } from "@/components/public";
+import { Folded } from "@/components/sport-setup";
+import { fmtDay, timeIST } from "@/components/sections";
+import { publicEvent, sportView } from "@/lib/public-data";
 import { SPORTS, sportBySlug } from "@/lib/sports";
 
-export function generateStaticParams() {
-  return SPORTS.map((s) => ({ code: EVENT.code, sport: s.slug }));
-}
-
-/** Rolling bye: each round, an odd field gives one random player a bye. */
-function rollingRounds(n: number) {
-  const out: { field: number; matches: number; bye: boolean }[] = [];
-  while (n > 1) {
-    out.push({ field: n, matches: Math.floor(n / 2), bye: n % 2 === 1 });
-    n = Math.ceil(n / 2);
-  }
-  return out;
-}
-
-const roundName = (left: number, field: number) => (field === 2 ? "Final" : field <= 4 ? "Semis" : field <= 8 ? "Quarters" : `Round ${left}`);
-
-export default function SportPage({ params }: { params: { code: string; sport: string } }) {
-  const sport = sportBySlug(params.sport);
-  if (!sport) notFound();
-  const sum = sportSummary(sport);
-  const matches = matchesFor(sport.slug);
-  const rounds = rollingRounds(sum.sides);
+export default async function SportPage({ params }: { params: { code: string; sport: string } }) {
+  if (!sportBySlug(params.sport)) notFound();
+  const pe = (await publicEvent(params.code))!;
+  const v = sportView(pe, params.sport);
+  const { sport, summary } = v;
   const idx = SPORTS.indexOf(sport) + 1;
   const kindLabel = sport.kind === "singles" ? "Singles" : sport.kind === "doubles" ? "Doubles · random pairs" : "Teams via auction";
+  const current = v.rounds.find((r) => r.matches.some((m) => m.status === "live" || m.status === "scheduled")) ?? v.rounds[v.rounds.length - 1];
+  const liveDraws = v.draws.filter((d) => !d.replaced_at);
 
   return (
     <>
@@ -46,62 +31,113 @@ export default function SportPage({ params }: { params: { code: string; sport: s
         <dl className="mt-6 grid grid-cols-2 border-t-2 border-ink md:grid-cols-4">
           <Meta k="Date" v={`${fmtDay(sport.date, { weekday: "short", day: "numeric", month: "short" })}${sport.endDate ? ` – ${fmtDay(sport.endDate, { day: "numeric" })}` : ""}`} />
           <Meta k="Where" v={sport.time ? `${sport.venue}, ${sport.time}` : sport.venue} />
-          <Meta k="Entries" v={sport.kind === "doubles" ? `${sum.entries} → ${sum.sides} pairs` : String(sum.entries)} />
-          <Meta k="Format" v={sport.kind === "team" ? "Groups → knockout" : `Knockout · ${rounds.length} rounds`} />
+          <Meta k="Entries" v={sport.kind === "doubles" && v.sides ? `${summary.entries} → ${v.sides} pairs` : sport.kind === "team" && v.sides ? `${v.sides} teams` : String(summary.entries)} />
+          <Meta k="Format" v={v.method?.name ?? "Being decided"} />
         </dl>
-        {sum.state === "live" && (
+        {summary.current && !summary.champion && (
           <div className="mt-5">
             <div className="flex justify-between text-sm">
-              <span className="text-mute">Round 1</span>
+              <span className="text-mute">{summary.current.label}</span>
               <span className="num">
-                {sum.done}/{sum.total} played{sum.live ? <span className="text-accent"> · {sum.live} live</span> : null}
+                {summary.current.done}/{summary.current.total} played{summary.live ? <span className="text-accent"> · {summary.live} live</span> : null}
               </span>
             </div>
             <div className="mt-2 h-1 bg-rule/10">
-              <div className="h-full bg-accent" style={{ width: `${(sum.done / sum.total) * 100}%` }} />
+              <div className="h-full bg-accent" style={{ width: `${summary.current.total ? (summary.current.done / summary.current.total) * 100 : 0}%` }} />
             </div>
           </div>
         )}
       </section>
 
-      {sport.kind === "team" ? (
-        <TeamsPending slug={sport.slug} />
+      {summary.champion && (
+        <div className="mb-10 rounded-xl bg-ink p-5 text-paper md:p-8">
+          <p className="label text-paper/60">Champion</p>
+          <p className="mt-1 flex items-center gap-3 font-display text-4xl font-black uppercase leading-none md:text-6xl">
+            <Crown className="shrink-0 text-accent" size={36} /> {summary.champion}
+          </p>
+        </div>
+      )}
+
+      {!v.rounds.length ? (
+        <div className="rounded-xl border-2 border-dashed border-rule/25 p-6 md:p-10">
+          <p className="label text-accent">{sport.kind === "team" ? "Waiting on the auction" : "Draw not out yet"}</p>
+          <p className="mt-3 font-display text-3xl font-extrabold uppercase leading-tight md:text-4xl">
+            {sport.kind === "team" ? "Teams go up once captains hand in their sheets." : "The draw happens here, in public, with its seed recorded."}
+          </p>
+          <p className="mt-3 max-w-md text-mute">{summary.entries} entered. This page updates by itself.</p>
+        </div>
       ) : (
         <div className="grid gap-10 md:grid-cols-12">
           <div className="min-w-0 md:col-span-8">
-            <div className="no-scrollbar -mx-4 mb-1 flex gap-5 overflow-x-auto border-b hair px-4 md:mx-0 md:px-0">
-              {rounds.map((r, i) => (
-                <span key={i} className={`shrink-0 border-b-2 pb-2.5 font-display text-lg font-bold uppercase ${i === 0 ? "border-accent text-ink" : "border-transparent text-mute/60"}`}>
-                  {roundName(i + 1, r.field)}
-                </span>
-              ))}
-            </div>
-            <FixtureList matches={matches} unit={sport.unit} />
+            {v.groups.length > 0 && (
+              <section className="mb-10">
+                <h2 className="mb-3 font-display text-2xl font-extrabold uppercase">Group tables</h2>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {v.groups.map((g) => (
+                    <Table key={g.g} title={`Group ${g.g}`} rows={g.rows} through={g.perGroup} />
+                  ))}
+                </div>
+              </section>
+            )}
+            {v.finalTable.length > 0 && (
+              <section className="mb-10">
+                <Table title="Final round robin" rows={v.finalTable} through={1} />
+              </section>
+            )}
+            <RoundView rounds={v.rounds} current={current.key} unit={sport.unit} />
           </div>
+
           <aside className="space-y-8 md:col-span-4">
-            <div className="md:sticky md:top-20">
-              <h2 className="font-display text-2xl font-extrabold uppercase">How it narrows</h2>
-              <p className="mt-1 text-sm text-mute">Rolling bye: when a round has an odd number, one player is drawn for a bye. Nobody gets two.</p>
-              <ol className="mt-4 border-t-2 border-ink">
-                {rounds.map((r, i) => (
-                  <li key={i} className="grid grid-cols-[1fr_auto_auto] items-baseline gap-4 border-b hair py-2.5 text-sm">
-                    <span>{roundName(i + 1, r.field)}</span>
-                    <span className="num text-mute">
-                      {r.field} → {r.matches} {r.matches === 1 ? "match" : "matches"}
-                    </span>
-                    <span className={`label whitespace-nowrap text-right ${r.bye ? "text-accent" : "opacity-0"}`}>+1 bye</span>
-                  </li>
-                ))}
-              </ol>
-              <div className="mt-6 rounded-lg border hair bg-sheet p-4">
-                <p className="label">Draw record</p>
-                <p className="mt-2 text-sm">
-                  Round 1 drawn by the committee app on <span className="num">20 Dec, 21:14</span>.
-                </p>
-                <p className="mt-1 text-sm text-mute">
-                  Seed <span className="num text-ink">{(sport.slug.length * 7919).toString(16).toUpperCase()}</span> · anyone can re-run it and get the same draw.
-                </p>
-              </div>
+            <div className="md:sticky md:top-20 md:space-y-8">
+              {v.method && (
+                <section>
+                  <h2 className="font-display text-2xl font-extrabold uppercase">How it&apos;s decided</h2>
+                  <p className="mt-1 font-medium">{v.method.name}</p>
+                  <p className="mt-1 text-sm text-mute">{v.method.how}</p>
+                  <p className="mt-3 text-sm">
+                    <span className="num">{v.byes}</span> {v.byes === 1 ? "bye" : "byes"} so far
+                  </p>
+                </section>
+              )}
+              <section className="mt-8 md:mt-0">
+                <Folded title="Draw record" count={v.draws.length}>
+                  <ul className="space-y-2.5 text-sm">
+                    {v.draws.map((d) => (
+                      <li key={d.id}>
+                        <p className="flex justify-between gap-2">
+                          <span className={d.replaced_at ? "text-mute line-through" : ""}>
+                            {d.kind === "pairs" ? "Pairs" : d.kind === "repair" ? "No-show re-pair" : `Round ${d.round}`}
+                          </span>
+                          <span className="num text-xs text-mute">
+                            {fmtDay(d.created_at, { day: "numeric", month: "short" })} {timeIST(d.created_at)}
+                          </span>
+                        </p>
+                        <p className="text-xs text-mute">
+                          Seed <span className="num text-ink">{d.seed}</span>
+                          {d.replaced_at ? <span className="text-accent"> · redone: {d.note}</span> : null}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-xs text-mute">
+                    {liveDraws.length} in use. Same names + same seed always give the same draw, so anyone can check it.
+                  </p>
+                </Folded>
+              </section>
+              {v.changes.length > 0 && (
+                <section className="mt-3 md:mt-0">
+                  <Folded title="Change log" count={v.changes.length}>
+                    <ul className="space-y-2 text-sm">
+                      {v.changes.slice(0, 30).map((c) => (
+                        <li key={c.id} className="grid grid-cols-[44px_1fr] gap-2">
+                          <span className="num text-xs text-mute">{timeIST(c.created_at)}</span>
+                          <span>{c.summary}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Folded>
+                </section>
+              )}
             </div>
           </aside>
         </div>
@@ -120,35 +156,32 @@ function Meta({ k, v }: { k: string; v: string }) {
   );
 }
 
-function TeamsPending({ slug }: { slug: string }) {
-  const people = entrants(slug);
-  const roleOf = (p: (typeof people)[number]) => (slug === "cricket" ? p.cricketRole : p.volleyballRole) ?? "—";
-  const roles = new Map<string, number>();
-  for (const p of people) roles.set(roleOf(p), (roles.get(roleOf(p)) ?? 0) + 1);
-  const max = Math.max(...roles.values());
+function Table({ title, rows, through }: { title: string; rows: { id: string; name: string; won: number; lost: number; diff: number; pts: number }[]; through: number }) {
   return (
-    <div className="grid gap-10 md:grid-cols-12">
-      <div className="md:col-span-7">
-        <div className="rounded-xl border-2 border-dashed border-rule/25 p-6 md:p-10">
-          <p className="label text-accent">Waiting on the auction</p>
-          <p className="mt-3 font-display text-3xl font-extrabold uppercase leading-tight md:text-4xl">Teams go up once captains hand in their sheets.</p>
-          <p className="mt-3 max-w-md text-mute">Every one of the {people.length} players gets picked. Groups and fixtures are drawn here right after, in public.</p>
-        </div>
-      </div>
-      <div className="md:col-span-5">
-        <h2 className="font-display text-2xl font-extrabold uppercase">In the pool</h2>
-        <ul className="mt-3 border-t-2 border-ink">
-          {[...roles].sort((a, b) => b[1] - a[1]).map(([role, n]) => (
-            <li key={role} className="grid grid-cols-[110px_1fr_36px] items-center gap-3 border-b hair py-2.5 text-sm">
-              <span>{role}</span>
-              <span className="h-1.5 bg-rule/10">
-                <span className="block h-full bg-ink" style={{ width: `${(n / max) * 100}%` }} />
-              </span>
-              <span className="num text-right">{n}</span>
-            </li>
+    <div className="rounded-xl border hair p-3">
+      <p className="label mb-1">{title}</p>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-[11px] text-mute">
+            <th className="py-1 font-normal" />
+            <th className="w-7 text-right font-normal">W</th>
+            <th className="w-7 text-right font-normal">L</th>
+            <th className="w-10 text-right font-normal">+/−</th>
+            <th className="w-8 text-right font-normal">Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.id} className={i === through - 1 ? "border-b border-dashed border-rule/30" : ""}>
+              <td className={`max-w-0 truncate py-1 ${i < through ? "font-medium" : "text-mute"}`}>{r.name}</td>
+              <td className="num text-right">{r.won}</td>
+              <td className="num text-right">{r.lost}</td>
+              <td className="num text-right text-mute">{r.diff > 0 ? `+${r.diff}` : r.diff}</td>
+              <td className="num text-right font-medium">{r.pts}</td>
+            </tr>
           ))}
-        </ul>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }

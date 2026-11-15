@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { eventTag } from "@/lib/public-data";
 import { requireAdmin } from "@/lib/auth";
 import { db, eventByCode, must } from "@/lib/db";
 import { newSeed, roundRobin, type Pair } from "@/lib/draw";
@@ -22,7 +23,7 @@ async function ctx(code: string, slug: string) {
 
 const refresh = (code: string, slug: string) => {
   revalidatePath(`/admin/e/${code}/sports/${slug}`, "layout");
-  revalidatePath(`/e/${code}`, "layout");
+  revalidateTag(eventTag(code)); // public pages update on their next refresh
 };
 
 const stageName = (m: { stage: string; round: number; grp: string | null }) =>
