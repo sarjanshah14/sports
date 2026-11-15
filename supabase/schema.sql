@@ -105,3 +105,19 @@ alter table public.sport_settings enable row level security;
 alter table public.sides enable row level security;
 alter table public.draws enable row level security;
 alter table public.matches enable row level security;
+
+-- Phase 4: results, no-shows, change log.
+alter table public.matches add column court int, add column absent text, add column updated_at timestamptz not null default now();
+-- absent: 'a' | 'b' | 'both' — who didn't turn up
+
+-- Public record of every result and correction, in plain sentences.
+create table public.changes (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.events on delete cascade,
+  sport text not null,
+  match_id uuid references public.matches on delete set null,
+  summary text not null,
+  created_at timestamptz not null default now()
+);
+create index changes_event on public.changes (event_id, created_at desc);
+alter table public.changes enable row level security;

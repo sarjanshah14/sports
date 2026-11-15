@@ -1,5 +1,6 @@
 import { db, must, type EventRow } from "./db";
 import type { Method, Options } from "./draw";
+import type { M } from "./rounds";
 import { sportBySlug, type Sport } from "./sports";
 
 // Server-only reads for one sport of one event.
@@ -7,7 +8,7 @@ import { sportBySlug, type Sport } from "./sports";
 export type Side = { id: string; name: string; members: string[]; captain: string | null };
 export type DrawRow = { id: string; kind: string; round: number | null; method: string | null; seed: string; input: string[]; output: DrawOutput; replaced_at: string | null; note: string | null; created_at: string };
 export type DrawOutput = { pairs?: [string, string | null][]; groups?: string[][]; leftover?: string | null };
-export type MatchRow = { id: string; stage: string; round: number; no: number; grp: string | null; side_a: string | null; side_b: string | null; winner: string | null; status: string };
+export type MatchRow = M & { court: number | null; absent: "a" | "b" | "both" | null };
 export type Settings = { method: Method; options: Options };
 export type Entrant = { id: string; name: string; role: string | null };
 
@@ -22,7 +23,7 @@ export async function loadSport(ev: EventRow, slug: string) {
     db().from("sides").select("id, name, members, captain").eq("event_id", ev.id).eq("sport", slug).order("name"),
     db().from("sport_settings").select("method, options").eq("event_id", ev.id).eq("sport", slug).maybeSingle(),
     db().from("draws").select("*").eq("event_id", ev.id).eq("sport", slug).order("created_at", { ascending: false }),
-    db().from("matches").select("id, stage, round, no, grp, side_a, side_b, winner, status").eq("event_id", ev.id).eq("sport", slug).order("round").order("grp").order("no"),
+    db().from("matches").select("id, stage, round, no, grp, side_a, side_b, winner, status, score, court, absent").eq("event_id", ev.id).eq("sport", slug).order("round").order("grp").order("no"),
   ]);
   const people = (must(entries) as unknown as { participants: { id: string; name: string; cricket_role: string | null; volleyball_role: string | null } }[])
     .map(({ participants: p }) => ({ id: p.id, name: p.name, role: slug === "cricket" ? p.cricket_role : slug === "volleyball" ? p.volleyball_role : null }))

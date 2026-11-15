@@ -16,10 +16,11 @@ export default async function SportSetup({ params }: { params: { code: string; s
   const { sport } = st;
   const live = (kind: string) => st.draws.find((d) => d.kind === kind && !d.replaced_at);
   const pairsDraw = live("pairs");
-  const roundDraw = live("round");
+  const roundDraw = st.draws.find((d) => d.kind === "round" && d.round === 1 && !d.replaced_at && !d.note);
   const n = sport.kind === "doubles" && !pairsDraw ? Math.floor(st.entrants.length / 2) : competitorCount(st);
   const sideName = new Map(st.sides.map((s) => [s.id, s.name]));
-  const r1 = st.matches.filter((m) => m.round === 1 || m.stage === "group");
+  const firstStage = st.settings.method === "groups" ? "group" : st.settings.method === "swiss" ? "swiss" : "knockout";
+  const r1 = st.matches.filter((m) => m.stage === firstStage && (m.stage === "group" || m.round === 1) && m.status !== "void");
   const byes = r1.filter((m) => m.status === "bye").length;
   const teamsShort = sport.kind === "team" && st.sides.reduce((t, s) => t + s.members.length, 0) < st.entrants.length;
 
@@ -119,6 +120,9 @@ export default async function SportSetup({ params }: { params: { code: string; s
                   <PairList rows={r1.map((m) => ({ key: m.id, a: sideName.get(m.side_a ?? "") ?? "?", b: m.side_b ? sideName.get(m.side_b) ?? "?" : null, tag: String(m.no) }))} />
                 </Folded>
               )}
+              <Link href={`/admin/e/${ev.code}/sports/${sport.slug}/play`} className="btn w-full py-3.5 text-base">
+                Open the match desk →
+              </Link>
               <DrawButton code={ev.code} slug={sport.slug} kind="round" redo label="Draw again" />
             </div>
           ) : (

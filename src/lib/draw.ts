@@ -93,7 +93,11 @@ export function bracketOrder(P: number): number[] {
 
 /** Standard: byes all in round 1. Byes go to draw positions 1..byes, each paired against a real player. */
 export function standardRound1(ids: string[], seed: string): Pair[] {
-  const drawn = shuffle(ids, seed);
+  return seededPairs(shuffle(ids, seed));
+}
+
+/** Bracket from a ranked list (best first): rank 1 meets the lowest rank, byes go to the top ranks. */
+export function seededPairs(drawn: string[]): Pair[] {
   const P = nextPow2(drawn.length);
   const order = bracketOrder(P);
   const pairs: Pair[] = [];
