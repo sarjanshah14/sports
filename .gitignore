@@ -38,3 +38,6 @@ next-env.d.ts
 # self-check build output
 /.check
 .env*
+
+# demo video project (large media, not app code)
+/video

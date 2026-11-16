@@ -7,7 +7,7 @@ export type Sport = {
   group: "indoor" | "outdoor";
   /** Exact option text from the Google Form; the importer matches on the part before "(". */
   formLabel: string;
-  date: string; // ISO day; cricket spans two days
+  date: string; // ISO day from the form (month-day is what counts; the year comes from the event, see inEventYear)
   endDate?: string;
   time?: string;
   venue: string;
@@ -53,4 +53,11 @@ export function splitSports(cell: string) {
     else if (part.trim()) unknown.push(part.trim());
   }
   return { slugs, unknown };
+}
+
+/** The form gives day and month only ("22 December"); take the year from the event's start date.
+ * ponytail: one year for every sport, add per-sport dates if an event ever runs over New Year. */
+export function inEventYear(s: Sport, startsOn: string | null | undefined): Sport {
+  const y = startsOn?.slice(0, 4);
+  return y ? { ...s, date: y + s.date.slice(4), endDate: s.endDate && y + s.endDate.slice(4) } : s;
 }

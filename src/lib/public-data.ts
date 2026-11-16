@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import { db, must, type EventRow } from "./db";
 import { METHODS, type Method, type Options } from "./draw";
 import { currentRound, nextStep, parseScore, standings, type M } from "./rounds";
-import { SPORTS, sportBySlug } from "./sports";
+import { SPORTS, inEventYear, sportBySlug } from "./sports";
 
 // Everything the public pages show. Phone numbers and rooms never leave the server.
 // Cached per event; every committee action clears the cache (revalidateTag(eventTag(code))),
@@ -102,7 +102,7 @@ export async function publicEvent(code: string) {
     const next = set && ms.length ? nextStep(set.method, set.options, ms, "peek") : null;
     const playable = cur ? cur.matches.filter((m) => m.side_b) : [];
     return {
-      sport,
+      sport: inEventYear(sport, raw.ev.starts_on),
       entries: raw.entries.filter((e) => e.sport === sport.slug).length,
       method: set ? METHODS.find((x) => x.id === set.method) ?? null : null,
       champion: next?.kind === "champion" ? name(next.id) : null,
@@ -117,10 +117,10 @@ export async function publicEvent(code: string) {
 export type PublicEvent = NonNullable<Awaited<ReturnType<typeof publicEvent>>>;
 
 export function sportView(pe: PublicEvent, slug: string) {
-  const sport = sportBySlug(slug)!;
+  const summary = pe.sports.find((s) => s.sport.slug === slug)!;
+  const sport = summary.sport;
   const raw = pe.raw.matches.filter((m) => m.sport === slug);
   const set = pe.raw.settings.find((s) => s.sport === slug);
-  const summary = pe.sports.find((s) => s.sport.slug === slug)!;
   const matches = pe.all.filter((m) => m.sport === slug);
 
   // Rounds in play order, for the tabs.

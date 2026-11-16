@@ -12,7 +12,7 @@ export default async function SportPage({ params }: { params: { code: string; sp
   const pe = (await publicEvent(params.code))!;
   const v = sportView(pe, params.sport);
   const { sport, summary } = v;
-  const idx = SPORTS.indexOf(sport) + 1;
+  const idx = SPORTS.findIndex((s) => s.slug === sport.slug) + 1;
   const kindLabel = sport.kind === "singles" ? "Singles" : sport.kind === "doubles" ? "Doubles · random pairs" : "Teams via auction";
   const current = v.rounds.find((r) => r.matches.some((m) => m.status === "live" || m.status === "scheduled")) ?? v.rounds[v.rounds.length - 1];
   const liveDraws = v.draws.filter((d) => !d.replaced_at);

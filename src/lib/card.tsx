@@ -22,7 +22,8 @@ export async function card({ kicker, title, big, bigLabel, lines, foot }: { kick
           <span>{kicker}</span>
           <div style={{ width: 22, height: 22, borderRadius: 11, background: ACCENT, display: "flex" }} />
         </div>
-        <div style={{ display: "flex", fontSize: title.length > 12 ? 120 : 150, lineHeight: 0.9, textTransform: "uppercase", marginTop: 18 }}>{title}</div>
+        {/* One line only: a wrapped title pushed the lines below into it. Big Shoulders caps run ~0.45em wide. */}
+        <div style={{ display: "flex", fontSize: Math.max(64, Math.min(150, Math.floor(1072 / (title.length * 0.45)))), lineHeight: 0.9, textTransform: "uppercase", marginTop: 18, whiteSpace: "nowrap", overflow: "hidden" }}>{title}</div>
         {big ? (
           <div style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
             <span style={{ fontSize: 26, color: MUTE, letterSpacing: 4, textTransform: "uppercase" }}>{bigLabel}</span>
@@ -31,7 +32,7 @@ export async function card({ kicker, title, big, bigLabel, lines, foot }: { kick
         ) : (
           <div style={{ display: "flex", flexDirection: "column", marginTop: 30, gap: 8 }}>
             {lines.slice(0, 4).map((l, i) => (
-              <span key={i} style={{ fontSize: 40, color: i === 0 ? PAPER : "#C9C4BA", textTransform: "uppercase" }}>
+              <span key={i} style={{ fontSize: 40, color: i === 0 ? PAPER : "#C9C4BA", textTransform: "uppercase", whiteSpace: "nowrap", overflow: "hidden" }}>
                 {l}
               </span>
             ))}
