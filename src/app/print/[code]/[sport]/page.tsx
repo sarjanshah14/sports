@@ -97,7 +97,7 @@ export default async function PrintSport({ params, searchParams }: { params: { c
           </section>
         )}
 
-        {bracket && <PrintBracket rounds={ko} final={v.finalTable} done={!!summary.champion || v.finalTable.length > 0} />}
+        {bracket && <PrintBracket rounds={ko} final={v.finalTable} done={!!summary.champion || v.finalTable.length > 0} room={summary.champion ? 640 : 750} />}
 
         {!rounds.length && !bracket && <p className="mt-10 text-lg">The draw hasn&apos;t been made yet.</p>}
 
@@ -167,77 +167,148 @@ function Row({ m, unit }: { m: PublicMatch; unit: string }) {
   );
 }
 
-/** The knockout as one A4 page: a column per round, boxes spaced like a bracket, sized so the biggest round fits. */
-function PrintBracket({ rounds, final, done }: { rounds: { key: string; label: string; matches: PublicMatch[] }[]; final: { id: string; name: string; won: number; lost: number; diff: number }[]; done: boolean }) {
-  // Rounds not drawn yet get empty boxes, so the sheet can be filled in by hand on the notice board.
-  // ponytail: assumes one winner (or bye) per box goes through; a final round robin shows up once it is drawn.
-  const todo: { key: string; label: string; boxes: number }[] = [];
-  if (!done) {
-    let left = rounds[rounds.length - 1].matches.length;
-    let n = rounds.length;
-    while (left > 1) {
-      n += 1;
-      const boxes = Math.ceil(left / 2);
-      todo.push({ key: `todo-${n}`, label: boxes === 1 ? "Final" : `Round ${n}`, boxes });
-      left = boxes;
-    }
+/**
+ * The knockout as one A4 page, drawn as a real bracket: every match sits level with the two matches that fed it,
+ * joined by lines. Feeders are found from who actually played (rolling-bye rounds are re-drawn each round),
+ * so the earlier rounds are re-ordered to keep lines from crossing. Rounds not drawn yet print as empty boxes.
+ */
+function PrintBracket({ rounds, final, done, room }: { room: number; rounds: { key: string; label: string; matches: PublicMatch[] }[]; final: { id: string; name: string; won: number; lost: number; diff: number }[]; done: boolean }) {
+  const W = 700; // px across the A4 print area
+  type Node = { id: string; m: PublicMatch | null; x: number; y: number; h: number; from: string[] };
+
+  // 1. Order every drawn round from the last one backwards: a match's feeders sit together, in its order.
+  const has = (m: PublicMatch, id: string | null) => !!id && (m.aId === id || m.bId === id);
+  const feeders = (r: number, m: PublicMatch) => (r === 0 ? [] : [m.aId, m.bId].map((id) => rounds[r - 1].matches.find((f) => has(f, id))).filter((f): f is PublicMatch => !!f));
+  const order: PublicMatch[][] = rounds.map(() => []);
+  const last = rounds.length - 1;
+  order[last] = [...rounds[last].matches].sort((a, b) => a.no - b.no);
+  for (let r = last; r > 0; r--) {
+    const seen = new Set<string>();
+    for (const m of order[r])
+      for (const f of feeders(r, m))
+        if (!seen.has(f.id)) {
+          seen.add(f.id);
+          order[r - 1].push(f);
+        }
+    order[r - 1].push(...rounds[r - 1].matches.filter((m) => !seen.has(m.id)).sort((a, b) => a.no - b.no));
   }
-  const most = Math.max(...rounds.map((r) => r.matches.length));
-  const rowMm = Math.min(14, 180 / most); // ~180mm of the A4 page is left once the header, champion and footer are in
-  const font = Math.max(5, Math.min(11, (rowMm * 0.9 - 0.6) / 0.58)); // two lines of names must fit in each box
-  const boxH = `${rowMm * 0.9}mm`;
+
+  // 2. Columns: drawn rounds, then empty rounds still to come, then a final round robin if there is one.
+  const todo: number[] = [];
+  if (!done) for (let left = rounds[last].matches.length; left > 1; ) todo.push((left = Math.ceil(left / 2)));
   const cols = rounds.length + todo.length + (final.length ? 1 : 0);
+  const H = Math.min(room, rounds[0].matches.length * 64); // up to what's left once the header (and champion) and footer are in
+  const colW = Math.min(W / cols, 230); // small brackets stay compact instead of stretching across the page
+  const gap = Math.min(26, colW * 0.2);
+  const boxW = colW - gap;
+  const unit = H / order[0].length;
+  const boxH = Math.min(unit - 3, unit * 0.86, 30); // always leaves a gap between boxes
+  const font = Math.max(5, Math.min(10.5, boxH * 0.36));
+
+  // Lucky losers and re-drawn rounds can put two boxes at the same height: push them apart, keep them on the page.
+  // Done column by column, so the next round is centred on where its feeders really ended up.
+  const spread = (col: Node[]) => {
+    const c = [...col].sort((x, y) => x.y - y.y);
+    const space = (c[0]?.h ?? boxH) + 3;
+    for (let i = 1; i < c.length; i++) c[i].y = Math.max(c[i].y, c[i - 1].y + space);
+    if (c.length) c[c.length - 1].y = Math.min(c[c.length - 1].y, H - c[0].h / 2);
+    for (let i = c.length - 2; i >= 0; i--) c[i].y = Math.min(c[i].y, c[i + 1].y - space);
+    if (c.length) c[0].y = Math.max(c[0].y, c[0].h / 2);
+    return col;
+  };
+
+  // 3. Place: round 1 evenly, every later match level with its feeders.
+  const nodes: Node[][] = [];
+  order.forEach((list, r) => {
+    const prev = nodes[r - 1] ?? [];
+    nodes.push(
+      spread(
+        list.map((m, i) => {
+          const fs = feeders(r, m).map((f) => prev.find((n) => n.id === f.id)!).filter(Boolean);
+          const y = fs.length ? fs.reduce((t, n) => t + n.y, 0) / fs.length : (i + 0.5) * (H / list.length);
+          return { id: m.id, m, x: r * colW, y, h: boxH, from: fs.map((n) => n.id) };
+        }),
+      ),
+    );
+  });
+  todo.forEach((count, t) => {
+    const prev = [...nodes[nodes.length - 1]].sort((a, b) => a.y - b.y);
+    const h = Math.max(boxH, Math.min(H / count - 3, 30)); // empty boxes get room for two hand-written names
+    nodes.push(
+      spread(
+        Array.from({ length: count }, (_, i) => {
+          const fs = prev.slice(i * 2, i * 2 + 2);
+          return { id: `todo-${t}-${i}`, m: null, x: (rounds.length + t) * colW, y: fs.reduce((s, n) => s + n.y, 0) / fs.length, h, from: fs.map((n) => n.id) };
+        }),
+      ),
+    );
+  });
+  const all = new Map(nodes.flat().map((n) => [n.id, n]));
+  const labels = [...rounds.map((r) => r.label), ...todo.map((c, i) => (i === todo.length - 1 && c === 1 ? "Final" : `Round ${rounds.length + i + 1}`))];
+  const head = "absolute top-0 border-b-2 border-black font-display text-[12px] font-black uppercase leading-none";
+
   return (
-    <section className="avoid-break mt-6 grid gap-[2mm]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, fontSize: `${font}px` }}>
-      {rounds.map((r) => (
-        <div key={r.key} className="flex min-w-0 flex-col">
-          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">{r.label}</p>
-          <div className="flex flex-col justify-around" style={{ height: `${most * rowMm}mm` }}>
-            {r.matches.map((m) => (
-              <div key={m.id} className="overflow-hidden border border-black px-[1mm] py-[0.3mm] leading-[1.1]" style={{ height: boxH }}>
-                {(["a", "b"] as const).map((side) => {
-                  const n = side === "a" ? m.a : m.b;
-                  const won = m.status === "done" && m.winner === side;
-                  return (
-                    <p key={side} className={`flex justify-between gap-1 ${won ? "font-bold" : m.status === "done" ? "text-black/55" : ""}`}>
-                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{n ?? <span className="uppercase tracking-wider text-black/50">bye</span>}</span>
-                      {m.sets && <span className="shrink-0 font-mono">{side === "a" ? m.sets.a : m.sets.b}</span>}
-                    </p>
-                  );
-                })}
-              </div>
+    <section className="avoid-break mt-6" style={{ fontSize: `${font}px` }}>
+      <div className="relative mb-[2mm] h-[16px]">
+        {labels.map((l, i) => (
+          <p key={i} className={head} style={{ left: i * colW, width: boxW }}>
+            {l}
+          </p>
+        ))}
+        {final.length > 0 && (
+          <p className={head} style={{ left: (cols - 1) * colW, width: boxW }}>
+            Final round robin
+          </p>
+        )}
+      </div>
+      <div className="relative" style={{ width: W, height: H }}>
+        <svg className="absolute inset-0" width={W} height={H} aria-hidden>
+          {nodes.flat().flatMap((n) =>
+            n.from.map((fid) => {
+              const f = all.get(fid)!;
+              const mid = f.x + boxW + gap / 2;
+              return <path key={`${fid}-${n.id}`} d={`M${f.x + boxW} ${f.y}H${mid}V${n.y}H${n.x}`} fill="none" stroke="#000" strokeWidth={0.8} />;
+            }),
+          )}
+        </svg>
+        {nodes.flat().map((n) => (
+          <div key={n.id} className="absolute flex flex-col justify-center overflow-hidden border border-black bg-white px-[1.2mm] leading-[1.1]" style={{ left: n.x, top: n.y - n.h / 2, width: boxW, height: n.h }}>
+            {n.m ? (
+              (["a", "b"] as const).map((side) => {
+                const m = n.m!;
+                const who = side === "a" ? m.a : m.b;
+                if (side === "b" && !who) return <p key={side} className="uppercase tracking-wider text-black/45">bye</p>;
+                const won = m.status === "done" && m.winner === side;
+                return (
+                  <p key={side} className={`flex justify-between gap-1 ${won ? "font-bold" : m.status === "done" ? "text-black/55" : ""}`}>
+                    <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{who}</span>
+                    {m.sets && <span className="shrink-0 font-mono">{side === "a" ? m.sets.a : m.sets.b}</span>}
+                  </p>
+                );
+              })
+            ) : (
+              <span className="flex h-full flex-col justify-evenly">
+                <span className="block border-b border-dotted border-black/45" />
+                <span className="block border-b border-dotted border-black/45" />
+              </span>
+            )}
+          </div>
+        ))}
+        {final.length > 0 && (
+          <div className="absolute border border-black bg-white px-[1.5mm] py-[1mm]" style={{ left: (cols - 1) * colW, top: H / 2 - final.length * 9, width: boxW }}>
+            {final.map((r, i) => (
+              <p key={r.id} className={`flex justify-between gap-1 ${i === 0 ? "font-bold" : ""}`}>
+                <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                  {i + 1}. {r.name}
+                </span>
+                <span className="shrink-0 font-mono">
+                  {r.won}–{r.lost}
+                </span>
+              </p>
             ))}
           </div>
-        </div>
-      ))}
-      {todo.map((r) => (
-        <div key={r.key} className="flex min-w-0 flex-col">
-          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">{r.label}</p>
-          <div className="flex flex-col justify-around" style={{ height: `${most * rowMm}mm` }}>
-            {Array.from({ length: r.boxes }, (_, i) => (
-              <div key={i} className="flex flex-col justify-around border border-black px-[1mm]" style={{ height: `max(${boxH}, 7mm)` }}>
-                <span className="block border-b border-dotted border-black/40" />
-                <span className="block border-b border-dotted border-black/40" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-      {final.length > 0 && (
-        <div className="min-w-0">
-          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">Final round robin</p>
-          {final.map((r, i) => (
-            <p key={r.id} className={`flex justify-between gap-1 border-b border-black/20 py-[0.5mm] ${i === 0 ? "font-bold" : ""}`}>
-              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                {i + 1}. {r.name}
-              </span>
-              <span className="shrink-0 font-mono">
-                {r.won}–{r.lost}
-              </span>
-            </p>
-          ))}
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }

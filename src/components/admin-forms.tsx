@@ -41,23 +41,30 @@ export function CreateEvent() {
       </button>
     );
   return (
-    <form action={action} className="space-y-4 rounded-xl border hair bg-sheet p-5">
-      <label className="block">
-        <span className="label">Event name</span>
-        <input name="name" required autoFocus placeholder="Hostel Sports Week 2026" className="field mt-1.5 bg-paper" />
-      </label>
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block">
-          <span className="label">Starts</span>
-          <input name="starts_on" type="date" className="field mt-1.5 bg-paper" />
-        </label>
-        <label className="block">
-          <span className="label">Ends</span>
-          <input name="ends_on" type="date" className="field mt-1.5 bg-paper" />
-        </label>
+    <form action={action} className="w-full basis-full rounded-xl border hair bg-sheet p-5 md:p-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-display text-2xl font-extrabold uppercase leading-none">New event</p>
+        <p className="hidden text-sm text-mute sm:block">You get its 6-digit code straight away.</p>
       </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-end">
+        <label className="block min-w-0">
+          <span className="label">Event name</span>
+          <input name="name" required autoFocus placeholder="Hostel Sports Week 2026" className="field mt-1.5 bg-paper" />
+        </label>
+        <div className="grid grid-cols-2 gap-3 md:contents">
+          <label className="block min-w-0">
+            <span className="label">Starts</span>
+            <input name="starts_on" type="date" className="field mt-1.5 bg-paper" />
+          </label>
+          <label className="block min-w-0">
+            <span className="label">Ends</span>
+            <input name="ends_on" type="date" className="field mt-1.5 bg-paper" />
+          </label>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-mute">Sport days come from the Google Form (22–28 Dec); the year is taken from the start date.</p>
       <Err msg={state?.error} />
-      <div className="flex gap-2">
+      <div className="mt-4 flex gap-2">
         <Submit pending="Creating…">Create and get code</Submit>
         <button type="button" onClick={() => setOpen(false)} className="btn-quiet">
           Cancel
