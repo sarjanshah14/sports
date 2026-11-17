@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BottomNav, DesktopNav, ThemeToggle } from "@/components/client";
+import { NameTips } from "@/components/name-tips";
 import { AutoRefresh } from "@/components/public";
 import { publicEvent } from "@/lib/public-data";
 
@@ -16,6 +17,7 @@ export default async function EventLayout({ children, params }: { children: Reac
   return (
     <div className="min-h-dvh pb-20 md:pb-0">
       <AutoRefresh />
+      <NameTips tips={pe.tips} />
       <header className="sticky top-0 z-30 border-b hair bg-paper/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
           <Link href={`/e/${ev.code}`} className="min-w-0 truncate font-display text-xl font-black uppercase leading-none tracking-tight">

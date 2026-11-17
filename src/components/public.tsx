@@ -143,8 +143,8 @@ function Bracket({ rounds }: { rounds: Round[] }) {
                   [m.a, "a"],
                   [m.b, "b"],
                 ].map(([n, side]) => (
-                  <p key={side} className={`flex justify-between gap-2 truncate ${m.status === "done" ? (m.winner === side ? "font-semibold" : "text-mute") : ""}`}>
-                    <span className="truncate">{n ?? <span className="label">bye</span>}</span>
+                  <p key={side} className={`flex justify-between gap-2 ${m.status === "done" ? (m.winner === side ? "font-semibold" : "text-mute") : ""}`}>
+                    <span className="min-w-0">{n ?? <span className="label">bye</span>}</span>
                     {m.sets && <span className="num shrink-0 text-xs">{side === "a" ? m.sets.a : m.sets.b}</span>}
                   </p>
                 ))}

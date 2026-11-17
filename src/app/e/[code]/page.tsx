@@ -108,7 +108,9 @@ export default async function EventHome({ params }: { params: { code: string } }
                 {recent.map((m) => (
                   <div key={m.id}>
                     <p className="label flex justify-between pt-3">
-                      <span>{sportBySlug(m.sport)!.name}</span>
+                      <span>
+                        {sportBySlug(m.sport)!.name} · {stageLabel(m.stage, m.round, m.grp)}
+                      </span>
                       <span>{timeIST(m.updated)}</span>
                     </p>
                     <MatchRow m={m} unit={sportBySlug(m.sport)!.unit} />

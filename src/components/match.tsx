@@ -11,9 +11,9 @@ export function LiveTag({ className = "" }: { className?: string }) {
 
 function Side({ name, won, lost, me, flip }: { name: string; won: boolean; lost: boolean; me: boolean; flip?: boolean }) {
   return (
-    <span className={`flex min-w-0 items-center gap-2 ${flip ? "flex-row-reverse" : ""} ${won ? "font-semibold text-ink" : lost ? "text-mute" : "text-ink"}`}>
-      <span className={`size-1.5 shrink-0 rounded-[1px] ${won ? "bg-win" : "bg-transparent"}`} />
-      <span className={`truncate ${me ? "underline decoration-accent decoration-2 underline-offset-4" : ""}`}>{name}</span>
+    <span className={`flex min-w-0 items-start gap-2 ${flip ? "flex-row-reverse" : ""} ${won ? "font-semibold text-ink" : lost ? "text-mute" : "text-ink"}`}>
+      <span className={`mt-[0.55em] size-1.5 shrink-0 rounded-[1px] ${won ? "bg-win" : "bg-transparent"}`} />
+      <span className={`min-w-0 ${flip ? "text-right" : ""} ${me ? "underline decoration-accent decoration-2 underline-offset-4" : ""}`}>{name}</span>
     </span>
   );
 }
@@ -29,7 +29,7 @@ export function MatchRow({ m, unit, compact, me }: { m: PublicMatch; unit: strin
     return (
       <div className={`flex items-center gap-3 ${compact ? "mt-1" : "py-3"}`}>
         {!compact && <span className="num w-14 shrink-0 text-xs text-mute">#{m.no}</span>}
-        <span className={`flex-1 truncate ${isMe(m.a) ? "underline decoration-accent decoration-2 underline-offset-4" : ""}`}>{m.a}</span>
+        <span className={`min-w-0 flex-1 ${isMe(m.a) ? "underline decoration-accent decoration-2 underline-offset-4" : ""}`}>{m.a}</span>
         <span className="label">{wo ? "Walkover" : "Bye"} → next round</span>
       </div>
     );
@@ -59,7 +59,7 @@ export function MatchRow({ m, unit, compact, me }: { m: PublicMatch; unit: strin
             <span className={bWon ? "font-semibold" : "text-mute"}>{m.sets.b}</span>
           </>
         ) : done ? (
-          <span className="label">{wo ? "W/O" : neither ? "No-show" : "Final"}</span>
+          <span className="label">{wo ? "W/O" : neither ? "No-show" : "Played"}</span>
         ) : compact && m.status === "live" ? (
           <LiveTag />
         ) : null}
@@ -71,7 +71,7 @@ export function MatchRow({ m, unit, compact, me }: { m: PublicMatch; unit: strin
   return (
     <>
       {mobile}
-      <div className={`hidden grid-cols-[72px_1fr_140px_1fr_80px] items-center gap-4 py-3.5 lg:grid ${m.status === "live" ? "bg-accent/[0.06]" : ""}`}>
+      <div className={`hidden grid-cols-[72px_minmax(0,1fr)_140px_minmax(0,1fr)_80px] items-center gap-4 py-3.5 lg:grid ${m.status === "live" ? "bg-accent/[0.06]" : ""}`}>
         <span className="pl-1">{left}</span>
         <span className="flex justify-end text-right">
           <Side name={m.a} won={aWon} lost={bWon || neither} me={isMe(m.a)} flip />
@@ -84,7 +84,7 @@ export function MatchRow({ m, unit, compact, me }: { m: PublicMatch; unit: strin
               <span className={bWon ? "font-semibold" : "text-mute"}>{m.sets.b}</span>
             </>
           ) : done ? (
-            <span className="label">{wo ? "W/O" : neither ? "No-show" : "Final"}</span>
+            <span className="label">{wo ? "W/O" : neither ? "No-show" : "Played"}</span>
           ) : (
             <span className="font-display text-base font-bold uppercase text-mute">vs</span>
           )}

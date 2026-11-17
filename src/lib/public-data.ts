@@ -68,7 +68,7 @@ const load = (code: string) =>
         db().from("entries").select("participant_id, sport, participants!inner(event_id)").is("withdrawn_at", null).eq("participants.event_id", ev.id),
         db().from("changes").select("id, sport, summary, created_at").eq("event_id", ev.id).order("created_at", { ascending: false }).limit(300),
         db().from("draws").select("id, sport, kind, round, method, seed, replaced_at, note, created_at").eq("event_id", ev.id).order("created_at"),
-        db().from("participants").select("id, name").eq("event_id", ev.id),
+        db().from("participants").select("id, name, room").eq("event_id", ev.id),
       ]);
       return {
         ev,
@@ -78,7 +78,7 @@ const load = (code: string) =>
         entries: must(entries) as unknown as { participant_id: string; sport: string }[],
         changes: must(changes) as { id: string; sport: string; summary: string; created_at: string }[],
         draws: must(draws) as { id: string; sport: string; kind: string; round: number | null; method: string | null; seed: string; replaced_at: string | null; note: string | null; created_at: string }[],
-        people: must(people) as { id: string; name: string }[],
+        people: must(people) as { id: string; name: string; room: string | null }[],
       };
     },
     ["public-event", code],
@@ -111,7 +111,24 @@ export async function publicEvent(code: string) {
     };
   });
 
-  return { ev: raw.ev, raw, all, sports, name };
+  return { ev: raw.ev, raw, all, sports, name, tips: nameTips(raw) };
+}
+
+/** Hover / tap tooltips: every shown name -> "Full Name · room", so people with the same name can be told apart.
+ * Rooms are public on purpose (the committee asked for it); phone numbers still never leave the server. */
+function nameTips(raw: Loaded) {
+  const label = (p: { name: string; room: string | null }) => (p.room ? `${p.name} · ${/^\d/.test(p.room) ? "Rm " : ""}${p.room}` : p.name);
+  const byName = new Map<string, string[]>();
+  for (const p of raw.people) byName.set(p.name, [...(byName.get(p.name) ?? []), label(p)]);
+  const tips: Record<string, string> = {};
+  for (const [n, ls] of byName) tips[n] = ls.join("  or  "); // two people, same name: show both rooms
+  const byId = new Map(raw.people.map((p) => [p.id, p]));
+  for (const s of raw.sides) {
+    if (s.members.length !== 2 || tips[s.name]) continue; // pickleball pairs: "Rahul R. & Raj A." -> both full names
+    const ps = s.members.map((id) => byId.get(id)).filter((p) => !!p);
+    if (ps.length === 2) tips[s.name] = ps.map(label).join("  &  ");
+  }
+  return tips;
 }
 
 export type PublicEvent = NonNullable<Awaited<ReturnType<typeof publicEvent>>>;
