@@ -12,14 +12,16 @@ export async function generateMetadata({ params }: { params: { code: string; spo
   return { title: `${sportBySlug(params.sport)?.name ?? "Fixtures"} — print` };
 }
 
-export default async function PrintSport({ params, searchParams }: { params: { code: string; sport: string }; searchParams: { round?: string } }) {
+export default async function PrintSport({ params, searchParams }: { params: { code: string; sport: string }; searchParams: { round?: string; view?: string } }) {
   const pe = await publicEvent(params.code);
   if (!pe || !sportBySlug(params.sport)) notFound();
   const v = sportView(pe, params.sport);
   const { sport, summary } = v;
   const current = v.rounds.find((r) => r.matches.some((m) => m.status !== "done" && m.status !== "bye")) ?? v.rounds[v.rounds.length - 1];
   const all = searchParams.round === "all";
-  const rounds = all ? v.rounds : current ? [current] : [];
+  const ko = v.rounds.filter((r) => r.stage === "knockout");
+  const bracket = searchParams.view === "bracket" && ko.length > 0;
+  const rounds = bracket ? [] : all ? v.rounds : current ? [current] : [];
   const host = headers().get("host") ?? "";
   const link = `${host}/e/${pe.ev.code}/${sport.slug}`;
   const now = new Date().toISOString();
@@ -30,12 +32,17 @@ export default async function PrintSport({ params, searchParams }: { params: { c
         <Link href={`/e/${pe.ev.code}/${sport.slug}`} className="btn-quiet bg-white">
           ← Back
         </Link>
-        <Link href={`?`} className={`btn-quiet bg-white ${!all ? "border-black" : ""}`}>
+        <Link href={`?`} className={`btn-quiet bg-white ${!all && !bracket ? "border-black" : ""}`}>
           This round
         </Link>
-        <Link href={`?round=all`} className={`btn-quiet bg-white ${all ? "border-black" : ""}`}>
+        <Link href={`?round=all`} className={`btn-quiet bg-white ${all && !bracket ? "border-black" : ""}`}>
           All rounds
         </Link>
+        {ko.length > 0 && (
+          <Link href={`?view=bracket`} className={`btn-quiet bg-white ${bracket ? "border-black" : ""}`}>
+            Bracket
+          </Link>
+        )}
         <span className="ml-auto">
           <PrintButton />
         </span>
@@ -90,7 +97,9 @@ export default async function PrintSport({ params, searchParams }: { params: { c
           </section>
         )}
 
-        {!rounds.length && <p className="mt-10 text-lg">The draw hasn&apos;t been made yet.</p>}
+        {bracket && <PrintBracket rounds={ko} final={v.finalTable} done={!!summary.champion || v.finalTable.length > 0} />}
+
+        {!rounds.length && !bracket && <p className="mt-10 text-lg">The draw hasn&apos;t been made yet.</p>}
 
         {rounds.map((r) => (
           <section key={r.key} className="mt-7">
@@ -155,5 +164,80 @@ function Row({ m, unit }: { m: PublicMatch; unit: string }) {
         {m.court && !done ? <span className="block text-[9px]">{unit} {m.court}</span> : null}
       </span>
     </div>
+  );
+}
+
+/** The knockout as one A4 page: a column per round, boxes spaced like a bracket, sized so the biggest round fits. */
+function PrintBracket({ rounds, final, done }: { rounds: { key: string; label: string; matches: PublicMatch[] }[]; final: { id: string; name: string; won: number; lost: number; diff: number }[]; done: boolean }) {
+  // Rounds not drawn yet get empty boxes, so the sheet can be filled in by hand on the notice board.
+  // ponytail: assumes one winner (or bye) per box goes through; a final round robin shows up once it is drawn.
+  const todo: { key: string; label: string; boxes: number }[] = [];
+  if (!done) {
+    let left = rounds[rounds.length - 1].matches.length;
+    let n = rounds.length;
+    while (left > 1) {
+      n += 1;
+      const boxes = Math.ceil(left / 2);
+      todo.push({ key: `todo-${n}`, label: boxes === 1 ? "Final" : `Round ${n}`, boxes });
+      left = boxes;
+    }
+  }
+  const most = Math.max(...rounds.map((r) => r.matches.length));
+  const rowMm = Math.min(14, 180 / most); // ~180mm of the A4 page is left once the header, champion and footer are in
+  const font = Math.max(5, Math.min(11, (rowMm * 0.9 - 0.6) / 0.58)); // two lines of names must fit in each box
+  const boxH = `${rowMm * 0.9}mm`;
+  const cols = rounds.length + todo.length + (final.length ? 1 : 0);
+  return (
+    <section className="avoid-break mt-6 grid gap-[2mm]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, fontSize: `${font}px` }}>
+      {rounds.map((r) => (
+        <div key={r.key} className="flex min-w-0 flex-col">
+          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">{r.label}</p>
+          <div className="flex flex-col justify-around" style={{ height: `${most * rowMm}mm` }}>
+            {r.matches.map((m) => (
+              <div key={m.id} className="overflow-hidden border border-black px-[1mm] py-[0.3mm] leading-[1.1]" style={{ height: boxH }}>
+                {(["a", "b"] as const).map((side) => {
+                  const n = side === "a" ? m.a : m.b;
+                  const won = m.status === "done" && m.winner === side;
+                  return (
+                    <p key={side} className={`flex justify-between gap-1 ${won ? "font-bold" : m.status === "done" ? "text-black/55" : ""}`}>
+                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{n ?? <span className="uppercase tracking-wider text-black/50">bye</span>}</span>
+                      {m.sets && <span className="shrink-0 font-mono">{side === "a" ? m.sets.a : m.sets.b}</span>}
+                    </p>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {todo.map((r) => (
+        <div key={r.key} className="flex min-w-0 flex-col">
+          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">{r.label}</p>
+          <div className="flex flex-col justify-around" style={{ height: `${most * rowMm}mm` }}>
+            {Array.from({ length: r.boxes }, (_, i) => (
+              <div key={i} className="flex flex-col justify-around border border-black px-[1mm]" style={{ height: `max(${boxH}, 7mm)` }}>
+                <span className="block border-b border-dotted border-black/40" />
+                <span className="block border-b border-dotted border-black/40" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {final.length > 0 && (
+        <div className="min-w-0">
+          <p className="mb-[1.5mm] border-b-2 border-black pb-[0.5mm] font-display text-[13px] font-black uppercase">Final round robin</p>
+          {final.map((r, i) => (
+            <p key={r.id} className={`flex justify-between gap-1 border-b border-black/20 py-[0.5mm] ${i === 0 ? "font-bold" : ""}`}>
+              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                {i + 1}. {r.name}
+              </span>
+              <span className="shrink-0 font-mono">
+                {r.won}–{r.lost}
+              </span>
+            </p>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

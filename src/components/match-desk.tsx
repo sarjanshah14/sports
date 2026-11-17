@@ -31,7 +31,8 @@ export function MatchDesk({
   names: Record<string, string>;
   champion: string | null;
 }) {
-  const [filter, setFilter] = useState<Filter>("todo");
+  const [filter, setFilter] = useState<Filter>(champion ? "all" : "todo");
+  const [tab, setTab] = useState<string | null>(null); // round being looked at; null = the one in play
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [err, setErr] = useState("");
@@ -54,7 +55,15 @@ export function MatchDesk({
   const unstarted = rearrangeable(matches);
   const busyCourts = new Set(active.filter((m) => m.status === "live" && m.court).map((m) => m.court));
 
-  const pool = filter === "all" ? active : current;
+  // Round tabs: every round stays viewable (and correctable), also after a champion is crowned.
+  const keyOf = (m: MatchRow) => (m.stage === "group" ? "group" : `${m.stage}:${m.round}`);
+  const rounds = [...new Map([...active].sort((a, b) => rank[a.stage] - rank[b.stage] || (a.stage === b.stage ? a.round - b.round : 0)).map((m) => [keyOf(m), m])).values()];
+  const lastKo = Math.max(0, ...active.filter((m) => m.stage === "knockout").map((m) => m.round));
+  const tabLabel = (m: MatchRow) =>
+    m.stage === "knockout" && m.round === lastKo && top === "knockout" && active.filter((x) => keyOf(x) === keyOf(m) && x.side_b).length === 1 ? "Final" : stageTitle(m);
+  const viewKey = tab ?? (current[0] ? keyOf(current[0]) : "all");
+  const viewed = viewKey === "all" ? active : active.filter((m) => keyOf(m) === viewKey);
+  const pool = viewed;
   const shown = useMemo(() => {
     const s = q.trim().toLowerCase();
     return pool
@@ -216,13 +225,30 @@ export function MatchDesk({
       )}
 
       <div className="sticky top-14 z-20 -mx-4 space-y-2 border-b hair bg-paper/95 px-4 py-3 backdrop-blur md:mx-0 md:px-0">
+        {rounds.length > 1 && (
+          <div className="no-scrollbar flex gap-4 overflow-x-auto border-b hair">
+            {[...rounds.map((m) => [keyOf(m), tabLabel(m)]), ["all", "All rounds"]].map(([k, label]) => (
+              <button
+                key={k}
+                onClick={() => {
+                  setTab(k);
+                  const ms = k === "all" ? active : active.filter((m) => keyOf(m) === k);
+                  setFilter(ms.every((m) => m.status === "done" || m.status === "bye") ? "all" : "todo");
+                }}
+                className={`-mb-px shrink-0 border-b-2 pb-2 font-display text-lg font-extrabold uppercase leading-none ${viewKey === k ? "border-accent text-ink" : "border-transparent text-mute hover:text-ink"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
           {(
             [
-              ["todo", "To play", current.filter((m) => m.side_b && (m.status === "scheduled" || m.status === "live")).length],
-              ["live", "On now", current.filter((m) => m.status === "live").length],
-              ["done", "Results", doneCount],
-              ["all", "Everything", active.filter((m) => m.side_b).length],
+              ["todo", "To play", viewed.filter((m) => m.side_b && (m.status === "scheduled" || m.status === "live")).length],
+              ["live", "On now", viewed.filter((m) => m.status === "live").length],
+              ["done", "Results", viewed.filter((m) => m.side_b && m.status === "done").length],
+              ["all", "All", viewed.filter((m) => m.side_b).length],
             ] as [Filter, string, number][]
           ).map(([k, label, n]) => (
             <button key={k} onClick={() => setFilter(k)} className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm ${filter === k ? "border-ink bg-ink text-paper" : "hair text-mute"}`}>
